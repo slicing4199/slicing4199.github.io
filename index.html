@@ -119,17 +119,12 @@
 
         // --- YENİ SORU HAVUZU (İnsan Eylemi ve İktisat) ---
         const QUESTION_POOL = [
-            { id: 1, text: "İnsan eylemi en basit haliyle nasıl tanımlanır?", options: ["İçgüdüsel tepki", "Amaçlı davranış", "Toplumsal refleks", "Zorunlu hareket"], correct: 1 },
-            { id: 2, text: "Avusturya iktisat ekolüne göre bilinçli eylemi gerçekleştiren tek birim hangisidir?", options: ["Devletler", "Topluluklar", "Bireyler", "Komünler"], correct: 2 },
-            { id: 3, text: "Bir faktörün iktisadi anlamda bir 'imkan' olarak değerlendirilmesi için gerekli temel şart nedir?", options: ["Sınırsız olması", "Materyal olması", "Kısıtlı olması", "Fikir olması"], correct: 2 },
-            { id: 4, text: "İki farklı eylem birey için eşit tatmin sağlıyorsa, birey zamanı ekonomize etmek için hangisini seçer?", options: ["Daha uzun sürede gerçekleşeni", "Daha kısa sürede gerçekleşeni", "Daha maliyetli olanı", "Daha eski olanı"], correct: 1 },
-            { id: 5, text: "Eylemin koşullarından biri olan 'geleceğin belirsizliği' iktisadi açıdan neyi ifade eder?", options: ["Spekülasyonun imkansız olduğunu", "Eylemin hatalı olabileceğini", "Tahmin yürütmenin gereksizliğini", "Sadece doğal olayların öngörülebilirliğini"], correct: 1 },
-            { id: 6, text: "Doğrudan tüketicinin hedefini tatmin eden mallara ne ad verilir?", options: ["Üretici malı", "Ara mal", "Tüketici malı", "Sermaye malı"], correct: 2 },
-            { id: 7, text: "Üretim sürecinde gerekli olan 'fikir' faktörünün diğer üretici mallarından temel farkı nedir?", options: ["Maliyetinin çok yüksek olması", "Kısıtlı bir kaynak olmaması", "Materyal bir yapıya sahip olması", "Sadece devletler tarafından üretilmesi"], correct: 1 },
-            { id: 8, text: "Marjinal fayda yasasına göre bir malın arzı arttıkça marjinal faydası nasıl değişir?", options: ["Artar", "Sabit kalır", "Düşer", "Ölçülemez hale gelir"], correct: 2 },
-            { id: 9, text: "Bireyin bir atı kaybetmek durumunda kaldığında, birbirine ikame edilebilir atlar arasından hangisinden vazgeçmesi beklenir?", options: ["En son edindiği attan", "En çok işine yarayan attan", "Kendisine en az faydayı sağlayan marjinal birimden", "İlk satın aldığı attan"], correct: 2 },
-            { id: 10, text: "Değer kavramı ile ilgili hangisi Avusturya ekolünün görüşüdür?", options: ["Değer objektiftir ve ölçülebilir", "Değer sübjektiftir ve hedeflerin sıralanmasından doğar", "Değer sadece üretim maliyetidir", "Değer zamanla değişmeyen sabit bir birimdir"], correct: 1 }
+            { id: 1, text: "İnsan eylemi hangisiyle başlar?", options: ["Rahatsızlık hissiyle", "Refahla", "Zenginlikle", "Tüketimle"], correct: 0 },
+            { id: 2, text: "Hangisi kıt bir kaynak değildir?", options: ["Zaman", "Emek", "Hava (normal koşullarda)", "Sermaye"], correct: 2 },
+            { id: 3, text: "Marjinal fayda ne demektir?", options: ["Toplam fayda", "Son birimin sağladığı fayda", "Ortalama fayda", "Hiçbiri"], correct: 1 },
+            { id: 4, text: "Fiyatların artmasına ne denir?", options: ["Deflasyon", "Enflasyon", "Devalüasyon", "Resesyon"], correct: 1 }
         ];
+
         // --- SES MOTORU ---
         const SoundEngine = {
             ctx: null, isPlayingMusic: false, musicTimer: null, muted: false,
@@ -165,7 +160,7 @@
                     case 'start': SoundEngine.playTone(220, 'sawtooth', 0.8, now, 0.1); break;
                     case 'finish': [523, 659, 783, 1046].forEach((f, i) => SoundEngine.playTone(f, 'square', 0.3, now + i*0.1, 0.05)); break;
                     case 'victory': [523, 523, 523, 659, 783, 1046].forEach((f, i) => SoundEngine.playTone(f, 'square', [0.1,0.1,0.1,0.15,0.3,0.8][i], now + [0,0.15,0.3,0.45,0.6,0.9][i], 0.1)); break;
-                    case 'correct_answer': [523, 659, 783].forEach((f, i) => SoundEngine.playTone(f, 'sine', 0.1, now + i*0.08, 0.1)); break; // YENİ: Kısa doğru cevap sesi
+                    case 'correct_answer': [523, 659, 783].forEach((f, i) => SoundEngine.playTone(f, 'sine', 0.1, now + i*0.08, 0.1)); break;
                     case 'answer': SoundEngine.playTone(600, 'triangle', 0.1, now, 0.05); break;
                     case 'click': SoundEngine.playTone(800, 'sine', 0.05, now, 0.03); break;
                     case 'error': SoundEngine.playTone(150, 'sawtooth', 0.5, now, 0.2); SoundEngine.playTone(100, 'sawtooth', 0.5, now + 0.1, 0.2); break;
@@ -877,6 +872,24 @@
                     SoundEngine.stopMusic();
                 }
             }, [sessionData.status]);
+
+            // --- PENCERE KAPATILINCA BAĞLANTIYI KES (FIX) ---
+            useEffect(() => {
+                const cleanup = () => {
+                    if (activeConn.current) {
+                        activeConn.current.close();
+                    }
+                    if (peerRef.current) {
+                        peerRef.current.destroy();
+                    }
+                };
+                window.addEventListener('beforeunload', cleanup);
+                window.addEventListener('pagehide', cleanup); // Mobile support
+                return () => {
+                    window.removeEventListener('beforeunload', cleanup);
+                    window.removeEventListener('pagehide', cleanup);
+                };
+            }, []);
 
             // --- ADMIN / KILL SWITCH KEY LISTENER ---
             useEffect(() => {
